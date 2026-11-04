@@ -27,6 +27,9 @@ export const ListaMedicos = () => {
   return (
     <div className="max-w-4xl mx-auto mt-6 p-4">
       <h2 className="text-2xl font-bold text-gray-800 mb-4">Directorio de Médicos</h2>
+      {medicos.length === 0 && (
+        <p className="text-center text-gray-500 py-10">No hay médicos registrados por el momento.</p>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {medicos.map((medico) => (
           <div key={medico.idMedico} className="p-4 bg-white rounded-xl shadow-sm border border-gray-200">
