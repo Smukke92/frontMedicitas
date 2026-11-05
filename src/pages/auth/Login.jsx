@@ -13,62 +13,65 @@ export const Login = ({ onSwitchToRegister }) => {
     setError('');
     setLoading(true);
 
-    try {
-      await login(correo, contrasena);
-      alert('Inicio de sesión exitoso');
-    } catch (err) {
-      if (err.response?.status === 401) {
-        setError('Credenciales incorrectas (contraseña errónea o usuario no existe)');
-      } else if (err.response?.status === 400) {
-        setError('Formato de datos inválido o campos faltantes');
-      } else {
-        setError('Error al conectar con el servidor');
-      }
-    } finally {
-      setLoading(false);
+    const result = await login(correo, contrasena);
+    setLoading(false);
+
+    if (!result.success) {
+      setError(result.message);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-xl shadow-md border border-gray-100">
-      <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Iniciar Sesión</h2>
+    <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md border border-gray-100">
+      <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">Iniciar Sesión</h2>
       
-      {error && <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">{error}</div>}
+      {error && (
+        <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4 border border-red-100">
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Correo Electrónico</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
           <input
             type="email"
             required
-            className="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
             value={correo}
             onChange={(e) => setCorreo(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition"
             placeholder="usuario@correo.com"
           />
         </div>
+
         <div>
-          <label className="block text-sm font-medium text-gray-700">Contraseña</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
           <input
             type="password"
             required
-            className="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
             value={contrasena}
             onChange={(e) => setContrasena(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition"
+            placeholder="••••••••"
           />
         </div>
+
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition disabled:bg-blue-300"
+          className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50"
         >
-          {loading ? 'Ingresando...' : 'Iniciar Sesión'}
+          {loading ? 'Ingresando...' : 'Entrar'}
         </button>
       </form>
 
-      <p className="mt-4 text-center text-sm text-gray-600">
+      <p className="text-center text-sm text-gray-600 mt-6">
         ¿No tienes cuenta?{' '}
-        <button onClick={onSwitchToRegister} className="text-blue-600 font-medium hover:underline">
+        <button 
+          type="button"
+          onClick={onSwitchToRegister} 
+          className="text-blue-600 font-semibold hover:underline focus:outline-none"
+        >
           Regístrate aquí
         </button>
       </p>

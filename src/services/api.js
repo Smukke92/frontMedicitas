@@ -1,22 +1,27 @@
 import axios from 'axios';
 
-const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5158/api',
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+const api = axios.create({
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Interceptor para enviar el token JWT en cada solicitud si existe
-API.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+export const loginApi = async (correo, contrasena) => {
+  const response = await api.post('/auth/login', { correo, contrasena });
+  return response.data;
+};
 
-export default API;
+export const registrarPacienteApi = async (datosPaciente) => {
+  const response = await api.post('/pacientes/registro', datosPaciente);
+  return response.data;
+};
+
+export const getMedicosApi = async () => {
+  const response = await api.get('/medicos');
+  return response.data;
+};
+
+export default api;

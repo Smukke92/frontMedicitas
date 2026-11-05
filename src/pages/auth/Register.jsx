@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { authService } from '../../services/authService';
+import { registrarPacienteApi } from '../../services/api';
 
 export const Register = ({ onSwitchToLogin }) => {
   const [formData, setFormData] = useState({
@@ -14,6 +14,7 @@ export const Register = ({ onSwitchToLogin }) => {
   });
 
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -23,144 +24,97 @@ export const Register = ({ onSwitchToLogin }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
 
     try {
-      // Ajuste de formato ISO para fechaNacimiento
       const payload = {
         ...formData,
         fechaNacimiento: new Date(formData.fechaNacimiento).toISOString(),
       };
-
-      const res = await authService.registroPaciente(payload);
-      alert(res.message || 'Paciente registrado exitosamente');
-      onSwitchToLogin();
+      await registrarPacienteApi(payload);
+      setSuccess('Paciente registrado exitosamente. Redirigiendo al login...');
+      setTimeout(() => onSwitchToLogin(), 2000);
     } catch (err) {
-      if (err.response?.status === 400) {
-        setError(err.response.data.message || 'El correo ya está registrado o los datos son inválidos');
-      } else {
-        setError('Problema al guardar en la base de datos');
-      }
+      const msg = err.response?.data?.message || 'El correo ya está registrado o los datos son inválidos';
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-6 p-6 bg-white rounded-xl shadow-md border border-gray-100">
-      <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Registro de Paciente</h2>
+    <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-lg border border-gray-100">
+      <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">Registro de Paciente</h2>
 
-      {error && <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">{error}</div>}
+      {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4 border border-red-100">{error}</div>}
+      {success && <div className="bg-emerald-50 text-emerald-600 p-3 rounded-lg text-sm mb-4 border border-emerald-100">{success}</div>}
 
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="grid grid-cols-2 gap-2">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-700">Nombre</label>
-            <input
-              type="text"
-              name="nombre"
-              required
-              className="w-full p-2 border rounded-lg text-sm"
-              onChange={handleChange}
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+            <input type="text" name="nombre" required onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700">Apellido</label>
-            <input
-              type="text"
-              name="apellido"
-              required
-              className="w-full p-2 border rounded-lg text-sm"
-              onChange={handleChange}
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
+            <input type="text" name="apellido" required onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-700">Tipo Doc.</label>
-            <select
-              name="tipoDocumento"
-              className="w-full p-2 border rounded-lg text-sm"
-              value={formData.tipoDocumento}
-              onChange={handleChange}
-            >
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo Doc.</label>
+            <select name="tipoDocumento" onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500">
               <option value="CC">CC</option>
               <option value="CE">CE</option>
               <option value="TI">TI</option>
-              <option value="PASAPORTE">Pasaporte</option>
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700">Num. Documento</label>
-            <input
-              type="text"
-              name="numeroDocumento"
-              required
-              className="w-full p-2 border rounded-lg text-sm"
-              onChange={handleChange}
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nro. Documento</label>
+            <input type="text" name="numeroDocumento" required onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-700">Correo Electrónico</label>
-          <input
-            type="email"
-            name="correo"
-            required
-            className="w-full p-2 border rounded-lg text-sm"
-            onChange={handleChange}
-          />
+          <label className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+          <input type="email" name="correo" required onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-700">Contraseña</label>
-          <input
-            type="password"
-            name="contrasena"
-            required
-            className="w-full p-2 border rounded-lg text-sm"
-            onChange={handleChange}
-          />
+          <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+          <input type="password" name="contrasena" required onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-700">Teléfono</label>
-            <input
-              type="tel"
-              name="telefono"
-              required
-              className="w-full p-2 border rounded-lg text-sm"
-              onChange={handleChange}
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+            <input type="tel" name="telefono" required onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700">Fecha Nacimiento</label>
-            <input
-              type="date"
-              name="fechaNacimiento"
-              required
-              className="w-full p-2 border rounded-lg text-sm"
-              onChange={handleChange}
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Nacimiento</label>
+            <input type="date" name="fechaNacimiento" required onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2.5 mt-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition disabled:bg-blue-300"
+          className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50"
         >
-          {loading ? 'Registrando...' : 'Completar Registro'}
+          {loading ? 'Registrando...' : 'Registrarse'}
         </button>
       </form>
 
-      <p className="mt-4 text-center text-sm text-gray-600">
+      <p className="text-center text-sm text-gray-600 mt-6">
         ¿Ya tienes cuenta?{' '}
-        <button onClick={onSwitchToLogin} className="text-blue-600 font-medium hover:underline">
-          Inicia Sesión
+        <button 
+          type="button"
+          onClick={onSwitchToLogin} 
+          className="text-blue-600 font-semibold hover:underline focus:outline-none"
+        >
+          Inicia sesión
         </button>
       </p>
     </div>
