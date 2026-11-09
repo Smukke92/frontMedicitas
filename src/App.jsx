@@ -1,63 +1,89 @@
-import React, { useState } from "react";
-import { AuthProvider, useAuth } from "./context/AuthContext";
-import { Login } from "./pages/auth/Login.jsx";
-import { Register } from "./pages/auth/Register.jsx";
-import { ListaMedicos } from "./pages/medicos/ListaMedicos.jsx";
-import { Sidebar } from "./components/Sidebar.jsx";
+import React, { useState } from 'react';
+import { AlertCircle, LogOut, UserRound } from 'lucide-react';
+import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/useAuth';
+import { Sidebar } from './components/Sidebar.jsx';
+import { Login } from './pages/auth/Login.jsx';
+import { Register } from './pages/auth/Register.jsx';
+import { GestionMedicos } from './pages/medicos/GestionMedicos.jsx';
+import { ListaMedicos } from './pages/medicos/ListaMedicos.jsx';
+import { Horarios } from './pages/horarios/Horarios.jsx';
+import { Pacientes } from './pages/pacientes/Pacientes.jsx';
+
+const tabsByRole = {
+  paciente: ['medicos', 'disponibilidad', 'perfil'],
+  medico: ['pacientes'],
+  administrador: ['medicos', 'horarios', 'pacientes'],
+};
 
 const MainApp = () => {
-  const { user } = useAuth();
-  const [view, setView] = useState('login'); // Estado para alternar entre login y registro cuando no está autenticado
-  const [activeTab, setActiveTab] = useState('medicos'); // Pestaña activa dentro del Panel de Control
+  const { user, role, logout } = useAuth();
+  const [view, setView] = useState('login');
+  const [activeTab, setActiveTab] = useState('medicos');
 
-  // Si el usuario está autenticado, renderizamos la barra lateral y el contenido principal
-  if (user) {
-    const renderTabContent = () => {
-      switch (activeTab) {
-        case 'medicos':
-          return <ListaMedicos />;
-        case 'perfil':
-          return (
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Mi Perfil</h2>
-              <p className="text-gray-600">ID de Usuario: <span className="font-semibold">{user.idUsuario}</span></p>
-              <p className="text-gray-600">Correo: <span className="font-semibold">{user.correo}</span></p>
-              <p className="text-gray-600">ID de Rol: <span className="font-semibold">{user.idRol}</span></p>
-            </div>
-          );
-        default:
-          return (
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-800 capitalize mb-2">{activeTab.replace('-', ' ')}</h2>
-              <p className="text-gray-500">Módulo en desarrollo para este rol.</p>
-            </div>
-          );
-      }
-    };
-
+  if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
-        {/* Barra Lateral Dinámica */}
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-
-        {/* Contenido Principal con margen a la izquierda para desktop (md:ml-64) */}
-        <main className="flex-1 md:ml-64 p-6 md:p-10">
-          <div className="max-w-7xl mx-auto">
-            {renderTabContent()}
-          </div>
-        </main>
-      </div>
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 p-4 sm:p-8">
+        {view === 'login'
+          ? <Login onSwitchToRegister={() => setView('register')} />
+          : <Register onSwitchToLogin={() => setView('login')} />}
+      </main>
     );
   }
 
-  // Si no hay usuario en sesión, se muestra el Login o Registro
+  if (!role) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 p-5">
+        <section className="w-full max-w-lg rounded-2xl border border-amber-200 bg-white p-7 shadow-sm">
+          <div className="mb-4 flex items-center gap-3 text-amber-700"><AlertCircle /><h1 className="text-xl font-bold">Rol sin acceso configurado</h1></div>
+          <p className="text-sm leading-6 text-slate-600">El backend no asigna a esta cuenta un rol reconocido por la aplicación. No se mostrarán secciones protegidas.</p>
+          <button type="button" onClick={logout} className="mt-6 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"><LogOut size={17} /> Cerrar sesión</button>
+        </section>
+      </main>
+    );
+  }
+
+  const allowedTabs = tabsByRole[role] || [];
+  const selectedTab = allowedTabs.includes(activeTab) ? activeTab : allowedTabs[0];
+  const renderTab = () => {
+    if (!allowedTabs.includes(selectedTab)) return null;
+
+    switch (selectedTab) {
+      case 'medicos':
+        return role === 'administrador' ? <GestionMedicos /> : <ListaMedicos />;
+      case 'horarios':
+        return role === 'administrador' ? <Horarios /> : null;
+      case 'disponibilidad':
+        return role === 'paciente' ? <Horarios mode="availability" /> : null;
+      case 'pacientes':
+        return role === 'administrador' || role === 'medico' ? <Pacientes role={role} /> : null;
+      case 'perfil':
+        return role === 'paciente' ? (
+          <section className="rounded-2xl border border-amber-200 bg-white p-6 shadow-sm sm:p-8">
+            <div className="mb-4 flex items-center gap-3 text-amber-700"><UserRound /><h1 className="text-xl font-bold">Mi perfil</h1></div>
+            <p className="text-sm leading-6 text-slate-600">El servicio actual permite actualizar un paciente por ID, pero no ofrece una operación para consultar el perfil del paciente autenticado ni devuelve su ID de paciente al iniciar sesión. Para evitar mostrar o modificar el registro de otra persona, esta pantalla no habilita cambios hasta que el API exponga esa asociación.</p>
+          </section>
+        ) : null;
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      {view === 'login' ? (
-        <Login onSwitchToRegister={() => setView('register')} />
-      ) : (
-        <Register onSwitchToLogin={() => setView('login')} />
-      )}
+    <div className="min-h-screen bg-slate-50 md:flex">
+      <Sidebar activeTab={selectedTab} setActiveTab={setActiveTab} />
+      <main className="min-h-screen min-w-0 flex-1 px-4 pb-8 pt-20 md:ml-64 md:px-8 md:pt-8 lg:px-10">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-7 hidden items-center justify-between border-b border-slate-200 pb-5 md:flex">
+            <div>
+              <p className="text-sm text-slate-500">Portal de atención médica</p>
+              <p className="mt-0.5 font-semibold text-slate-900">Hola, {user.correo}</p>
+            </div>
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium capitalize text-slate-600">{role}</span>
+          </div>
+          {renderTab()}
+        </div>
+      </main>
     </div>
   );
 };

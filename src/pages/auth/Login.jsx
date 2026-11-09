@@ -1,80 +1,85 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { getApiErrorMessage } from '../../services/api';
+import { useAuth } from '../../context/useAuth';
 
 export const Login = ({ onSwitchToRegister }) => {
   const { login } = useAuth();
-  const [correo, setCorreo] = useState('');
-  const [contrasena, setContrasena] = useState('');
+  const [formData, setFormData] = useState({ correo: '', contrasena: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError('');
     setLoading(true);
 
-    const result = await login(correo, contrasena);
-    setLoading(false);
-
-    if (!result.success) {
-      setError(result.message);
+    try {
+      const result = await login(formData.correo.trim(), formData.contrasena);
+      if (!result.success) setError(result.message);
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError, 'No pudimos iniciar sesión. Inténtalo de nuevo.'));
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md border border-gray-100">
-      <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">Iniciar Sesión</h2>
-      
+    <section className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-7 shadow-xl shadow-slate-200/60 sm:p-9">
+      <div className="mb-8 text-center">
+        <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-blue-50 text-2xl text-blue-700">+</div>
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-700">MediCitas</p>
+        <h1 className="mt-2 text-2xl font-bold text-slate-900">Bienvenido de nuevo</h1>
+        <p className="mt-2 text-sm text-slate-500">Ingresa para continuar con tu atención.</p>
+      </div>
+
       {error && (
-        <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4 border border-red-100">
+        <div role="alert" className="mb-5 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+          <label htmlFor="login-correo" className="mb-1.5 block text-sm font-medium text-slate-700">Correo electrónico</label>
           <input
+            id="login-correo"
             type="email"
+            autoComplete="email"
             required
-            value={correo}
-            onChange={(e) => setCorreo(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition"
-            placeholder="usuario@correo.com"
+            value={formData.correo}
+            onChange={(event) => setFormData({ ...formData, correo: event.target.value })}
+            className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            placeholder="nombre@correo.com"
           />
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+          <label htmlFor="login-contrasena" className="mb-1.5 block text-sm font-medium text-slate-700">Contraseña</label>
           <input
+            id="login-contrasena"
             type="password"
+            autoComplete="current-password"
             required
-            value={contrasena}
-            onChange={(e) => setContrasena(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition"
-            placeholder="••••••••"
+            value={formData.contrasena}
+            onChange={(event) => setFormData({ ...formData, contrasena: event.target.value })}
+            className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            placeholder="Tu contraseña"
           />
         </div>
-
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50"
+          className="w-full rounded-xl bg-blue-700 px-4 py-3 font-semibold text-white transition hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-wait disabled:opacity-60"
         >
-          {loading ? 'Ingresando...' : 'Entrar'}
+          {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
         </button>
       </form>
 
-      <p className="text-center text-sm text-gray-600 mt-6">
-        ¿No tienes cuenta?{' '}
-        <button 
-          type="button"
-          onClick={onSwitchToRegister} 
-          className="text-blue-600 font-semibold hover:underline focus:outline-none"
-        >
-          Regístrate aquí
+      <p className="mt-7 text-center text-sm text-slate-600">
+        ¿Eres paciente y aún no tienes cuenta?{' '}
+        <button type="button" onClick={onSwitchToRegister} className="font-semibold text-blue-700 hover:underline">
+          Crear cuenta
         </button>
       </p>
-    </div>
+    </section>
   );
 };

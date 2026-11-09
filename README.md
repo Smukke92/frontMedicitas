@@ -1,16 +1,34 @@
-# React + Vite
+# MediCitas — frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Interfaz web para el sistema de citas médicas, construida con React, Vite y Tailwind CSS.
 
-Currently, two official plugins are available:
+## Desarrollo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```sh
+npm install
+npm run dev
+```
 
-## React Compiler
+El cliente usa `https://backend-medicitas-legacy.onrender.com/api` por defecto. Para apuntar a otra instancia, define `VITE_API_URL` con la URL base que incluya `/api`.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Verificación
 
-## Expanding the Oxlint configuration
+```sh
+npm run lint
+npm run build
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## Funcionalidades conectadas
+
+- Inicio/cierre de sesión, registro público de pacientes y mensajes de validación.
+- Directorio público de médicos.
+- Administración de médicos, horarios y disponibilidad según los endpoints existentes.
+- Búsqueda de pacientes por documento o nombre y actualización administrativa de sus datos.
+- Navegación limitada por rol en la interfaz; el backend sigue siendo quien autoriza cada petición protegida.
+
+## Límites actuales del API
+
+- El backend asigna `1 = Administrador`, `2 = Medico`, `3 = Paciente` y no emite un rol de Recepcionista. El frontend no concede acceso a roles desconocidos.
+- El inicio de sesión no devuelve el `idPaciente` ni existe un endpoint para consultar el perfil del paciente autenticado; no es seguro inferir esos datos desde el `idUsuario`.
+- No hay catálogo de especialidades ni estado del médico en el DTO del directorio. Por eso se solicita el ID de especialidad y se pide seleccionar explícitamente el estado a aplicar.
+- El registro de pacientes requiere correo y contraseña. El API no tiene una operación específica para el alta asistida por recepción.

@@ -1,38 +1,31 @@
-import API from './api';
+import {
+  getMedicosApi,
+  loginApi,
+  registrarPacienteApi,
+} from './api';
 
 export const authService = {
-  // 1. POST /api/auth/login
   login: async (correo, contrasena) => {
-    const response = await API.post('/auth/login', {
-      correo,
-      contrasena,
-    });
-    // Si la respuesta incluye un token o datos del usuario, los guardamos en sesión
-    if (response.data) {
-      localStorage.setItem('user', JSON.stringify(response.data));
-    }
-    return response.data;
+    const data = await loginApi(correo, contrasena);
+    localStorage.setItem('sgm_user', JSON.stringify(data));
+    return data;
   },
 
-  // 2. POST /api/pacientes/registro
-  registroPaciente: async (datosPaciente) => {
-    const response = await API.post('/pacientes/registro', datosPaciente);
-    return response.data;
-  },
+  registroPaciente: registrarPacienteApi,
 
-  // 3. GET /api/medicos
-  obtenerMedicos: async () => {
-    const response = await API.get('/medicos');
-    return response.data;
-  },
+  obtenerMedicos: getMedicosApi,
 
   logout: () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem('sgm_user');
   },
 
   getCurrentUser: () => {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
+    try {
+      const savedUser = localStorage.getItem('sgm_user');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch {
+      localStorage.removeItem('sgm_user');
+      return null;
+    }
   },
 };
