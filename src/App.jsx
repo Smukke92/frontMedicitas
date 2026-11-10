@@ -9,10 +9,13 @@ import { GestionMedicos } from './pages/medicos/GestionMedicos.jsx';
 import { ListaMedicos } from './pages/medicos/ListaMedicos.jsx';
 import { Horarios } from './pages/horarios/Horarios.jsx';
 import { Pacientes } from './pages/pacientes/Pacientes.jsx';
+import { AgendarCita } from './pages/citas/AgendarCita.jsx';
+import { MisCitas } from './pages/citas/MisCitas.jsx';
+import { AgendaMedico } from './pages/citas/AgendaMedico.jsx';
 
 const tabsByRole = {
-  paciente: ['medicos', 'disponibilidad', 'perfil'],
-  medico: ['pacientes'],
+  paciente: ['agendar-cita', 'mis-citas', 'medicos', 'perfil'],
+  medico: ['agenda-medico', 'pacientes'],
   administrador: ['medicos', 'horarios', 'pacientes'],
 };
 
@@ -55,6 +58,12 @@ const MainApp = () => {
         return role === 'administrador' ? <Horarios /> : null;
       case 'disponibilidad':
         return role === 'paciente' ? <Horarios mode="availability" /> : null;
+      case 'agendar-cita':
+        return role === 'paciente' ? <AgendarCita /> : null;
+      case 'mis-citas':
+        return role === 'paciente' ? <MisCitas /> : null;
+      case 'agenda-medico':
+        return role === 'medico' ? <AgendaMedico user={user} /> : null;
       case 'pacientes':
         return role === 'administrador' || role === 'medico' ? <Pacientes role={role} /> : null;
       case 'perfil':

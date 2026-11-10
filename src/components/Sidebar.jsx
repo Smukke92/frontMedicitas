@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   Calendar,
   CalendarClock,
+  CalendarPlus,
   LogOut,
   Menu,
   Stethoscope,
@@ -13,11 +14,13 @@ import { useAuth } from '../context/useAuth';
 
 const menuByRole = {
   paciente: [
+    { id: 'agendar-cita', label: 'Agendar cita', icon: CalendarPlus },
+    { id: 'mis-citas', label: 'Mis citas', icon: Calendar },
     { id: 'medicos', label: 'Directorio médico', icon: Stethoscope },
-    { id: 'disponibilidad', label: 'Disponibilidad', icon: CalendarClock },
     { id: 'perfil', label: 'Mi perfil', icon: User },
   ],
   medico: [
+    { id: 'agenda-medico', label: 'Mi agenda', icon: CalendarClock },
     { id: 'pacientes', label: 'Buscar paciente', icon: Users },
   ],
   administrador: [

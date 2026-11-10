@@ -62,8 +62,8 @@ export const actualizarEstadoMedicoApi = async (idMedico, estado) => {
   return response.data;
 };
 
-export const getHorariosMedicoApi = async (idMedico) => {
-  const response = await api.get(`/medicos/${idMedico}/horarios`);
+export const getHorariosMedicoApi = async (idMedico, signal) => {
+  const response = await api.get(`/medicos/${idMedico}/horarios`, { signal });
   return response.data;
 };
 
@@ -72,8 +72,41 @@ export const guardarHorarioMedicoApi = async (idMedico, horario) => {
   return response.data;
 };
 
-export const getDisponibilidadMedicoApi = async (idMedico, fecha) => {
-  const response = await api.get(`/medicos/${idMedico}/disponibilidad`, { params: { fecha } });
+export const getDisponibilidadMedicoApi = async (idMedico, fecha, signal) => {
+  const response = await api.get(`/medicos/${idMedico}/disponibilidad`, { params: { fecha }, signal });
+  return response.data;
+};
+
+export const agendarCitaApi = async (cita) => {
+  const response = await api.post('/citas', cita);
+  return response.data;
+};
+
+export const getCitasPacienteApi = async (fechaInicio, fechaFin) => {
+  const response = await api.get('/citas/paciente', { params: { fechaInicio, fechaFin } });
+  return response.data;
+};
+
+export const getAgendaMedicoApi = async (idMedico, fechaInicio, fechaFin) => {
+  const response = await api.get(`/citas/medico/${idMedico}`, { params: { fechaInicio, fechaFin } });
+  return response.data;
+};
+
+export const cancelarCitaApi = async (idCita) => {
+  const response = await api.put(`/citas/${idCita}/cancelar`);
+  return response.data;
+};
+
+export const reprogramarCitaApi = async (idCita, nuevaFecha, nuevaHoraInicio) => {
+  const response = await api.put(`/citas/${idCita}/reprogramar`, {
+    nuevaFecha,
+    nuevaHoraInicio,
+  });
+  return response.data;
+};
+
+export const cambiarEstadoCitaApi = async (idCita, idEstado) => {
+  const response = await api.put(`/citas/${idCita}/estado`, { idEstado });
   return response.data;
 };
 
