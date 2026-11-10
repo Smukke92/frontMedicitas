@@ -34,7 +34,7 @@ export const getApiErrorMessage = (error, fallback = 'No fue posible completar l
     ).join(' ');
   }
 
-  return data?.error || data?.message || fallback;
+  return data?.error || data?.message || data?.detail || data?.title || fallback;
 };
 
 export const loginApi = async (correo, contrasena) => {
@@ -72,8 +72,11 @@ export const guardarHorarioMedicoApi = async (idMedico, horario) => {
   return response.data;
 };
 
-export const getDisponibilidadMedicoApi = async (idMedico, fecha, signal) => {
-  const response = await api.get(`/medicos/${idMedico}/disponibilidad`, { params: { fecha }, signal });
+export const getDisponibilidadMedicoApi = async (idMedico, fechaInicio, fechaFin, signal) => {
+  const response = await api.get(`/medicos/${idMedico}/disponibilidad`, {
+    params: { fechaInicio, fechaFin },
+    signal,
+  });
   return response.data;
 };
 

@@ -161,7 +161,7 @@ export const MisCitas = () => {
                   <div className="mt-4 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
                     <p className="flex items-center gap-2 capitalize"><CalendarDays size={16} />{dateLabel(cita.fecha)}</p>
                     <p className="flex items-center gap-2"><Clock3 size={16} />{timeLabel(cita.horaInicio)}–{timeLabel(cita.horaFin)}</p>
-                    <p className="flex items-center gap-2"><MapPin size={16} />Lugar no informado por el servicio</p>
+                    <p className="flex items-center gap-2"><MapPin size={16} />{cita.lugar || (cita.idSede ? `Sede ${cita.idSede}` : 'Lugar no informado')}</p>
                   </div>
                 </div>
                 {cita.idEstado === 1 && (

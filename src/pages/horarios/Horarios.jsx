@@ -109,8 +109,8 @@ export const Horarios = ({ mode = 'admin' }) => {
     setSaving(true);
     setFranjas([]);
     try {
-      const data = await getDisponibilidadMedicoApi(idMedico, fecha);
-      const availableSlots = Array.isArray(data) ? data : [];
+      const data = await getDisponibilidadMedicoApi(idMedico, fecha, fecha);
+      const availableSlots = Array.isArray(data?.[fecha]) ? data[fecha] : [];
       setFranjas(availableSlots);
       setNotice({ type: 'success', text: availableSlots.length ? 'Estas son las franjas disponibles para la fecha elegida.' : 'No hay franjas disponibles para esa fecha.' });
     } catch (error) {

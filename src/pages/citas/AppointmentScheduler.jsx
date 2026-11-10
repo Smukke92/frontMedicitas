@@ -15,10 +15,6 @@ const currentDateString = () => {
 };
 const dateFromString = (value) => new Date(`${value}T12:00:00`);
 const dateToString = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-const chunkDates = (dates, size) => Array.from(
-  { length: Math.ceil(dates.length / size) },
-  (_, index) => dates.slice(index * size, (index + 1) * size)
-);
 const addDays = (date, amount) => {
   const result = new Date(date);
   result.setDate(result.getDate() + amount);
@@ -41,6 +37,7 @@ export const AppointmentScheduler = ({
   mode = 'book',
   appointmentId,
   fixedDoctorId,
+  patientId,
   onSuccess,
 }) => {
   const fixedDoctor = fixedDoctorId !== undefined && fixedDoctorId !== null;
@@ -87,57 +84,48 @@ export const AppointmentScheduler = ({
   useEffect(() => {
     if (!idMedico) return undefined;
     const requestKey = `${idMedico}:${dateToString(weekStart)}:${retry}`;
+    const weekEnd = addDays(weekStart, 6);
     const controller = new AbortController();
     let active = true;
 
-    const loadWeek = async () => {
+    const loadAvailability = async () => {
       try {
-        const today = currentDateString();
-        const dates = Array.from({ length: 7 }, (_, index) => dateToString(addDays(weekStart, index)))
-          .filter((date) => date >= today);
-
-        const results = {};
-        for (const dateGroup of chunkDates(dates, 3)) {
-          await Promise.all(dateGroup.map(async (date) => {
-            try {
-              const slots = await getDisponibilidadMedicoApi(idMedico, date, controller.signal);
-              results[date] = { slots: Array.isArray(slots) ? slots : [], error: null };
-            } catch (error) {
-              if (!controller.signal.aborted) {
-                results[date] = { slots: [], error: getApiErrorMessage(error, 'No fue posible verificar esta fecha.') };
-              }
-            }
-          }));
-          if (controller.signal.aborted) return;
-        }
+        const response = await getDisponibilidadMedicoApi(
+          idMedico,
+          dateToString(weekStart),
+          dateToString(weekEnd),
+          controller.signal
+        );
         if (!active || controller.signal.aborted) return;
 
-        const errors = Object.values(results).filter((result) => result.error);
-        setAvailability(results);
-        setCalendarStatus({ key: requestKey, state: errors.length ? 'error' : 'ready' });
-        if (errors.length) {
-          setNotice({ type: 'error', text: 'No fue posible verificar todas las fechas de esta semana. Usa “Reintentar” antes de elegir una franja.' });
-        } else {
-          setNotice(null);
+        if (!response || typeof response !== 'object' || Array.isArray(response)) {
+          throw new Error('El servicio devolvió un formato de disponibilidad no reconocido.');
         }
+
+        const results = Object.fromEntries(
+          Object.entries(response).map(([date, slots]) => [
+            date.slice(0, 10),
+            { slots: Array.isArray(slots) ? slots : [], error: null },
+          ])
+        );
+        setAvailability(results);
+        setCalendarStatus({ key: requestKey, state: 'ready' });
+        setNotice(null);
       } catch (error) {
         if (!active || controller.signal.aborted) return;
         setCalendarStatus({ key: requestKey, state: 'error' });
+        setAvailability({});
         setNotice({ type: 'error', text: getApiErrorMessage(error, 'No pudimos consultar la disponibilidad del médico.') });
       }
     };
 
-    loadWeek();
+    loadAvailability();
     return () => {
       active = false;
       controller.abort();
     };
   }, [idMedico, weekStart, retry]);
-
-  const specialties = useMemo(
-    () => [...new Set(medicos.map((doctor) => doctor.nombreEspecialidad).filter(Boolean))].sort(),
-    [medicos]
-  );
+  const specialties = useMemo(() => [...new Set(medicos.map((doctor) => doctor.nombreEspecialidad).filter(Boolean))].sort(), [medicos]);
   const filteredDoctors = useMemo(
     () => medicos.filter((doctor) => !specialty || doctor.nombreEspecialidad === specialty),
     [medicos, specialty]
@@ -179,6 +167,11 @@ export const AppointmentScheduler = ({
 
   const confirmAppointment = async () => {
     if (!selectedDate || !selectedSlot || !currentDoctor) return;
+    if (mode !== 'reschedule' && (!Number.isInteger(Number(patientId)) || Number(patientId) <= 0)) {
+      setNotice({ type: 'error', text: 'No pudimos identificar tu cuenta de paciente. Cierra sesión e inicia nuevamente antes de agendar.' });
+      return;
+    }
+
     setSubmitting(true);
     setNotice(null);
     try {
@@ -186,9 +179,10 @@ export const AppointmentScheduler = ({
         ? await reprogramarCitaApi(appointmentId, selectedDate, `${selectedSlot}:00`)
         : await agendarCitaApi({
           idMedico: Number(idMedico),
-          idPaciente: null,
+          idPaciente: Number(patientId),
           fecha: selectedDate,
           horaInicio: `${selectedSlot}:00`,
+          idSede: 1,
         });
       setNotice({ type: 'success', text: response.message || (mode === 'reschedule' ? 'La cita se reprogramó correctamente.' : 'La cita quedó agendada.') });
       setCompleted(true);
@@ -308,7 +302,7 @@ export const AppointmentScheduler = ({
           </div>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
             <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-blue-600" /> Disponible</span>
-            {calendarLoading ? <span>Consultando fechas...</span> : !idMedico ? <span>Selecciona un médico</span> : calendarStatus.state === 'error' ? (
+            {calendarLoading ? <span>Consultando semana...</span> : !idMedico ? <span>Selecciona un médico</span> : calendarStatus.state === 'error' ? (
               <button type="button" onClick={() => setRetry((current) => current + 1)} className="font-semibold text-blue-700 hover:underline">Reintentar disponibilidad</button>
             ) : <span>Fechas pasadas y sin franjas deshabilitadas</span>}
           </div>
@@ -349,7 +343,7 @@ export const AppointmentScheduler = ({
           <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
             <div className="flex items-start gap-2"><Stethoscope size={17} className="mt-0.5 text-blue-700" /><div><dt className="text-slate-500">Médico</dt><dd className="font-medium text-slate-900">{currentDoctor.nombre} {currentDoctor.apellido} · {currentDoctor.nombreEspecialidad}</dd></div></div>
             <div className="flex items-start gap-2"><CalendarDays size={17} className="mt-0.5 text-blue-700" /><div><dt className="text-slate-500">Fecha y hora</dt><dd className="font-medium capitalize text-slate-900">{dateLabel(selectedDate)}, {selectedSlot}</dd></div></div>
-            <div className="flex items-start gap-2 sm:col-span-2"><MapPin size={17} className="mt-0.5 text-blue-700" /><div><dt className="text-slate-500">Lugar</dt><dd className="font-medium text-slate-900">No informado por el servicio de citas.</dd></div></div>
+            <div className="flex items-start gap-2 sm:col-span-2"><MapPin size={17} className="mt-0.5 text-blue-700" /><div><dt className="text-slate-500">Lugar</dt><dd className="font-medium text-slate-900">Sede 1 · El servicio no informa la dirección al reservar.</dd></div></div>
           </dl>
           <button type="button" onClick={confirmAppointment} disabled={submitting || completed} className="mt-4 w-full rounded-xl bg-blue-700 px-5 py-3 font-semibold text-white hover:bg-blue-800 disabled:cursor-wait disabled:opacity-60 sm:w-auto">
             {completed ? 'Confirmada' : submitting ? 'Confirmando...' : mode === 'reschedule' ? 'Confirmar reprogramación' : 'Confirmar cita'}
